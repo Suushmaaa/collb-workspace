@@ -1,0 +1,68 @@
+redis:
+    image: redis:7-alpine
+    container_name: collab_redis
+    restart: always
+    command: redis-server --requirepass redis123
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - collab_network
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+
+networks:
+  collab_network:
+    driver: bridge
+=======
+  # Redis - For caching, sessions, pub/sub, and job queue
+  redis:
+    image: redis:7-alpine
+    container_name: collab_redis
+    restart: always
+    command: redis-server --requirepass redis123
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - collab_network
+
+  # NestJS Application
+  app:
+    build: .
+    container_name: collab_app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_USERNAME=postgres
+      - DATABASE_PASSWORD=postgres123
+      - DATABASE_NAME=collab_workspace
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=redis123
+      - JWT_SECRET=your-super-secret-jwt-key-here
+      - JWT_REFRESH_SECRET=your-super-secret-refresh-key-here
+      - CORS_ORIGIN=http://localhost:3000,http://localhost:3001
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - collab_network
+
+volumes:
+  postgres_data:
+  mongodb_data:
+  redis_data:
+
+networks:
+  collab_network:
+    driver: bridge

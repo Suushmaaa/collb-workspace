@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>WebSocket Test Client</h1>
+    <div>
+        <input type="text" id="token" placeholder="JWT Token" style="width: 500px;">
+        <button onclick="connect()">Connect</button>
+        <button onclick="disconnect()">Disconnect</button>
+    </div>
+    <div>
+        <input type="text" id="workspaceId" placeholder="Workspace ID">
+        <input type="text" id="userName" placeholder="Your Name">
+        <button onclick="joinWorkspace()">Join Workspace</button>
+    </div>
+    <div>
+        <textarea id="log" rows="20" cols="100" readonly></textarea>
+    </div>
+
+    <script>
+        let socket;
+
+        function log(message) {
+            const logArea = document.getElementById('log');
+            logArea.value += new Date().toISOString() + ' - ' + message + '\n';
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function connect() {
+            const token = document.getElementById('token').value;
+            
+            socket = io('http://localhost:3000/realtime', {
+                extraHeaders: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+
+            socket.on('connect', () => {
+                log('Connected to WebSocket server');
+            });
+
+            socket.on('disconnect', () => {
+                log('Disconnected from server');
+            });
+
+            socket.on('user:joined', (data) => {
+                log(`User joined: ${JSON.stringify(data)}`);
+            });
+
+            socket.on('user:left', (data) => {
+                log(`User left: ${JSON.stringify(data)}`);
+            });
+
+            socket.on('file:changed', (data) => {
+                log(`File changed: ${JSON.stringify(data)}`);
+            });
+
+            socket.on('cursor:updated', (data) => {
+                log(`Cursor updated: ${JSON.stringify(data)}`);
+            });
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+            }
+        }
+
+        function joinWorkspace() {
+            const workspaceId = document.getElementById('workspaceId').value;
+            const userName = document.getElementById('userName').value;
+
+            socket.emit('join:workspace', { workspaceId, userName }, (response) => {
+                log(`Join response: ${JSON.stringify(response)}`);
+            });
+        }
+    </script>
+</body>
+</html>
